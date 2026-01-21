@@ -4,12 +4,16 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
 import riccardogulin.dao.BlogsDAO;
+import riccardogulin.dao.CategoriesDAO;
 import riccardogulin.dao.DocumentsDAO;
 import riccardogulin.dao.UsersDAO;
 import riccardogulin.entities.Blog;
+import riccardogulin.entities.Category;
 import riccardogulin.entities.Document;
 import riccardogulin.entities.User;
 import riccardogulin.exceptions.NotFoundException;
+
+import java.util.ArrayList;
 
 public class Application {
 	private static final EntityManagerFactory emf = Persistence.createEntityManagerFactory("u4d13pu");
@@ -20,6 +24,7 @@ public class Application {
 		UsersDAO ud = new UsersDAO(em);
 		DocumentsDAO dd = new DocumentsDAO(em);
 		BlogsDAO bd = new BlogsDAO(em);
+		CategoriesDAO cd = new CategoriesDAO(em);
 
 		User aldo = new User("Aldo", "Baglio");
 		User giova = new User("Giovanni", "Storti");
@@ -64,6 +69,54 @@ public class Application {
 			System.out.println(javaFromDB);
 			User giovaFromDB = ud.findById("f454737b-7c0e-48e1-8bf9-56a3e87060b8");
 			giovaFromDB.getBlogs().forEach(blog -> System.out.println(blog));
+
+
+		} catch (NotFoundException ex) {
+			System.out.println(ex.getMessage());
+		}
+
+		// ********************************************* MANY TO MANY *************************************
+		Category category = new Category("Development");
+		Category category1 = new Category("OOP");
+		Category category2 = new Category("Frontend");
+		Category category3 = new Category("Backend");
+		Category category4 = new Category("Java");
+
+//		cd.saveCategory(category);
+//		cd.saveCategory(category1);
+//		cd.saveCategory(category2);
+//		cd.saveCategory(category3);
+//		cd.saveCategory(category4);
+
+		// Per associare ad un blog tot categorie dobbiamo creare una lista di categorie LETTE DA DB
+		try {
+			// 1. Cerco il blog nel DB
+			Blog javaFromDB = bd.findById("a0b4829e-4793-4f23-acee-ec9af6a9f577");
+
+			// 2. Cerco le categorie nel DB
+			Category developmentFromDB = cd.findById("abe7b183-85cc-4866-a9d4-ca0e64975c39");
+			Category oopFromDB = cd.findById("56ea5366-6b25-4795-b2b3-24b6a4a11aad");
+			Category javaCatFromDB = cd.findById("2ad8a7c0-0a09-4547-b0e5-12171ac7aff6");
+			Category backendFromDB = cd.findById("a9a47c4b-6d7a-4afd-87dc-d8cc765ab25a");
+
+			// 3. Creo una lista con esse
+			ArrayList<Category> javaCategories = new ArrayList<>();
+			javaCategories.add(developmentFromDB);
+			javaCategories.add(oopFromDB);
+			javaCategories.add(javaCatFromDB);
+			javaCategories.add(backendFromDB);
+
+			// 4. Passo la lista al blog tramite setter
+			javaFromDB.setCategories(javaCategories);
+
+			// 5. Risalvo il blog e JPA associerà automaticamente tutti gli id delle categorie ad esso
+			// bd.saveBlog(javaFromDB);
+
+			System.out.println("Tutte le categorie del blog java");
+			javaFromDB.getCategories().forEach(cat -> System.out.println(cat));
+
+			System.out.println("Tutti i blog associati alla categoria Development sono: ");
+			developmentFromDB.getBlogs().forEach(blog -> System.out.println(blog));
 
 
 		} catch (NotFoundException ex) {
